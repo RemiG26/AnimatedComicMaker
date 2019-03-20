@@ -27,10 +27,10 @@
 			let el = document.createElement("img")
 			el.src = image.url
 			el.style.position = "absolute"
-			el.style.top = image.y
-			el.style.left = image.x
-			el.style.width = image.width
-			el.style.height = image.height
+			el.style.top = image.y + 'px'
+			el.style.left = image.x + 'px'
+			el.style.width = image.width + 'px'
+			el.style.height = image.height + 'px'
 			body.appendChild(el)
 		})
 	</script>

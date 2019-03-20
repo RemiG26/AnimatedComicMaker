@@ -1,16 +1,1 @@
-[
-  {
-    "url": "/home/remi/Lab/BDUgo/bds/default/foo.jpg",
-    "width": "100vw",
-    "height": "50vh",
-    "x": "0px",
-    "y": "0px"
-  },
-  {
-    "url": "/home/remi/Lab/BDUgo/bds/default/bar.jpg",
-    "width": "100vw",
-    "height": "75vh",
-    "x": "105vw",
-    "y": "0px"
-  }
-]
+[{"height":238,"url":"file:///home/remi/Lab/BDUgo/bds/default/foo.jpg","width":798,"x":1097,"y":89,"zIndex":0},{"height":357,"url":"file:///home/remi/Lab/BDUgo/bds/default/bar.jpg","width":798,"x":122,"y":663,"zIndex":0}]

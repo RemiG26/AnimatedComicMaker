@@ -5,6 +5,8 @@
 	<meta name="viewport"
 		  content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
 	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
 	<title>BD Ugo - Modification</title>
 	<style>
 		body {
@@ -24,27 +26,138 @@
 			z-index: 0;
 		}
 		.active {
-			z-index: 999;
+			z-index: 998;
 		}
 	</style>
 </head>
 <body>
-<script>
-	const active = require('../bds/active.json')
-	const Drag = require('../js/Drag')
-	const bd = require('../bds/' + active.active + '/' + active.active + '.json')
-	let items = []
-	bd.forEach((image) => {
-		let el = document.createElement("img")
-		el.src = image.url
-		el.classList.add('img')
-		el.style.transform = `translate3d(${image.x}, ${image.y}, 0)`
-		el.style.width = image.width
-		el.style.height = image.height
-		document.body.appendChild(el)
-		items.push(el)
-	})
-	new Drag(items, 'img')
-</script>
+	<div class="fixed-action-btn">
+		<a class="btn-floating btn-large red">
+			<i class="large material-icons">mode_edit</i>
+		</a>
+		<ul>
+			<li><a class="btn-floating red" id="close"><i class="material-icons">close</i></a></li>
+			<li><a class="btn-floating green" id="save"><i class="material-icons">save</i></a></li>
+			<li><a class="btn-floating yellow modal-trigger" href="#selectionModal"><i class="material-icons">insert_chart</i></a></li>
+			<li><a class="btn-floating blue" id="addButton"><i class="material-icons">attach_file</i></a></li>
+		</ul>
+	</div>
+
+	<div id="selectionModal" class="modal">
+		<div class="modal-content">
+			<h4>Choisir une BD</h4>
+			<div class="row">
+				<div class="input-field col s12 m10">
+					<select id="selectionInput">
+					</select>
+					<label>BD</label>
+				</div>
+				<div class="input-field col s12 m2">
+					<button class="btn" id="changeBD">Changer</button>
+				</div>
+			</div>
+			<hr>
+			<div class="row">
+				<div class="input-field col s12 m10">
+					<input type="text" id="newBDName">
+					<label for="newBDName">Nom...</label>
+				</div>
+				<div class="input-field col s12 m2">
+					<button class="btn" id="createBD">Créer</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+	<script>
+		const ipc = require('electron').ipcRenderer
+		const active = require('../bds/active.json')
+		const Drag = require('../js/Drag')
+		const fs = require('fs')
+		const bd = require('../bds/' + active.active + '/' + active.active + '.json')
+
+		document.addEventListener('DOMContentLoaded', function(){
+			M.FloatingActionButton.init(document.querySelectorAll('.fixed-action-btn'))
+			M.Modal.init(document.querySelectorAll('.modal'))
+
+		})
+
+		document.querySelector('#close').addEventListener('click', () => {
+			ipc.send('close')
+		})
+
+		document.querySelector('#save').addEventListener('click', () => {
+			let json = []
+			items.forEach(item => {
+				let p = Drag.getTransform(item)
+				json.push({
+					url: item.src,
+					zIndex: parseInt(item.zIndex) || 0,
+					width: item.offsetWidth,
+					height: item.offsetHeight,
+					x: p[0],
+					y: p[1]
+				})
+			})
+			ipc.send('save', { json })
+		})
+
+		document.querySelector('#createBD').addEventListener('click', () => {
+			ipc.send('newBD', {
+				name: document.querySelector('#newBDName').value
+			})
+		})
+
+		let selectionInput = document.querySelector('#selectionInput')
+		let path = fs.realpathSync('./bds')
+		let files = fs.readdirSync(path, {
+			encoding: 'utf8',
+			withFileTypes: true
+		})
+		if(files)
+		{
+			files.forEach((item) => {
+				if(item.isDirectory())
+				{
+					let option = document.createElement("option")
+					option.innerText = item.name
+					selectionInput.appendChild(option)
+				}
+			})
+		}
+		M.FormSelect.init(selectionInput)
+
+		document.querySelector("#changeBD").addEventListener('click', () => {
+			let instance = M.FormSelect.getInstance(selectionInput)
+			let selectedOption = instance.wrapper.querySelector('.selected')
+			let value = selectedOption.innerText || null
+			if(value && value !== active.active)
+				ipc.send('changeBD', {
+					folder: value
+				})
+		})
+
+		// Display images
+		let items = []
+		bd.forEach((image) => {
+			let el = document.createElement("img")
+			el.src = image.url
+			el.classList.add('img')
+			el.style.transform = `translate3d(${image.x}px, ${image.y}px, 0)`
+			el.style.width = image.width + 'px'
+			el.style.height = image.height + 'px'
+			document.body.appendChild(el)
+			items.push(el)
+		})
+		// Init Drag onto images
+		new Drag(items, 'img')
+
+		// Add Image
+		let addBtn = document.querySelector('#addButton')
+		addBtn.addEventListener('click', () => {
+			ipc.send('upload')
+		})
+	</script>
 </body>
 </html>

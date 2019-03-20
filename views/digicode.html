@@ -82,6 +82,7 @@
 			ipc.send('validate', {
 				code: parseInt(input.value)
 			})
+			input.value = ""
 		})
 		deleteBtn.addEventListener('click', () => {
 			input.value = ""

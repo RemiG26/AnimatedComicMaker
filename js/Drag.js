@@ -7,11 +7,11 @@ class Drag
 	{
 		this.startPosition = null
 		this.html = document.querySelector("html")
-		debugger
 		this.items = items
 		this.move = this.move.bind(this)
 		this.endMove = this.endMove.bind(this)
 		this.resize = this.resize.bind(this)
+		this.hold = this.hold.bind(this)
 		this.interactionStart = this.interactionStart.bind(this)
 		interact(selector)
 			.origin('self')
@@ -28,6 +28,7 @@ class Drag
 				onmove: _.throttle(this.resize, 16),
 				onstart: this.interactionStart
 			})
+			.on('hold', this.hold)
 	}
 
 	move(e){
@@ -38,14 +39,14 @@ class Drag
 
 	endMove(e) {
 		let t = e.target
-		let pos = this.getTransform(t)
+		let pos = Drag.getTransform(t)
 		let y = parseInt(pos[1])
 		let x = parseInt(pos[0])
 		let zIndex = parseInt(t.style.zIndex) || 0
 		this.items.forEach((item) => {
 			if(item.src !== t.src)
 			{
-				let ipos = this.getTransform(item)
+				let ipos = Drag.getTransform(item)
 				let iy = parseInt(ipos[1])
 				let ix = parseInt(ipos[0])
 				// Collision
@@ -66,6 +67,14 @@ class Drag
 		e.target.classList.remove('active')
 	}
 
+	hold(e)
+	{
+		if(confirm('Voulez-vous vraiment supprimer cette image ?'))
+		{
+
+		}
+	}
+
 	resize (e) {
 		e.target.style.width = e.rect.width + 'px'
 		e.target.style.height = e.rect.height + 'px'
@@ -80,7 +89,7 @@ class Drag
 		}
 	}
 
-	getTransform(el) {
+	static getTransform(el) {
 		let results = window.getComputedStyle(el).transform.match(/matrix(?:(3d)\(\d+(?:, \d+)*(?:, (\d+))(?:, (\d+))(?:, (\d+)), \d+\)|\(\d+(?:, \d+)*(?:, (\d+))(?:, (\d+))\))/)
 
 		if(!results) return [0, 0, 0];
