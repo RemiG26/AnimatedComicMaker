@@ -18,6 +18,13 @@
 			border: 5px solid white;
 			transform: translate3D(0, 0, 0);
 			transition: 0s;
+			position: absolute;
+			top: 0;
+			left: 0;
+			z-index: 0;
+		}
+		.active {
+			z-index: 999;
 		}
 	</style>
 </head>
@@ -28,49 +35,48 @@
 	const _ = require('underscore')
 	const bd = require('../bds/' + active.active + '/' + active.active + '.json')
 	let html = document.querySelector('html')
+	let items = []
 	let startPosition = null
 	bd.forEach((image) => {
 		let el = document.createElement("img")
 		el.src = image.url
-		el.style.position = "absolute"
-		el.style.top = image.y
-		el.style.left = image.x
+		el.classList.add('img')
+		el.style.transform = `translate3d(${image.x}, ${image.y}, 0)`
 		el.style.width = image.width
 		el.style.height = image.height
 		document.body.appendChild(el)
+		items.push(el)
 	})
 
 	const move = _.throttle((e) => {
-		let x = startPosition.x + e.clientX - e.clientX0 + html.scrollLeft - startPosition.scrollLeft
-		let y = startPosition.y + e.clientY - e.clientY0 + html.scrollTop - startPosition.scrollTop
+		let x = startPosition.x + e.clientX - e.clientX0 + html.scrollLeft
+		let y = startPosition.y + e.clientY - e.clientY0 + html.scrollTop
 		e.target.style.transform = `translate3D(${x}px, ${y}px, 0)`
 	}, 16)
 
-	const savePosition = (e) => {
-
-	}
-
-	const resize = (e) => {
+	const resize = _.throttle((e) => {
 		let target = e.target
-
 		target.style.width = e.rect.width + 'px'
 		target.style.height = e.rect.height + 'px'
-
-		let x = startPosition.x + e.deltaRect.left + html.scrollLeft - startPosition.scrollLeft
-		let y = startPosition.y + e.deltaRect.top + html.scrollTop - startPosition.scrollTop
-
-		target.style.transform = `translate3D(${x}px, ${y}px, 0)`
-	}
+	}, 16)
 
 	const interactionStart = (e) => {
+		e.target.classList.add('active')
 		let rect = e.target.getBoundingClientRect()
 		startPosition = {
 			x: rect.x,
 			y: rect.y,
-			scrollLeft: html.scrollLeft,
-			scrollTop: html.scrollTop
 		}
-		console.log(startPosition)
+	}
+
+	function getTransform(el) {
+		let results = window.getComputedStyle(el).transform.match(/matrix(?:(3d)\(\d+(?:, \d+)*(?:, (\d+))(?:, (\d+))(?:, (\d+)), \d+\)|\(\d+(?:, \d+)*(?:, (\d+))(?:, (\d+))\))/)
+
+		if(!results) return [0, 0, 0];
+		if(results[1] == '3d') return results.slice(2,5);
+
+		results.push(0);
+		return results.slice(5, 8);
 	}
 
 	interact('img')
@@ -79,12 +85,40 @@
 			inertia: false,
 			autoScroll: true,
 			onmove: move,
-			onend: savePosition,
-			onstart: interactionStart
+			onstart: interactionStart,
+			onend: (e) => {
+				let t = e.target
+				let pos = getTransform(t)
+				let y = parseInt(pos[1])
+				let x = parseInt(pos[0])
+				let zIndex = parseInt(t.style.zIndex) || 0
+				items.forEach((item) => {
+					if(item.src !== t.src)
+					{
+						let ipos = getTransform(item)
+						let iy = parseInt(ipos[1])
+						let ix = parseInt(ipos[0])
+						// Collision
+						if(x < ix + item.offsetWidth &&
+						x + t.offsetWidth > ix &&
+						y < iy + item.offsetHeight &&
+						y + t.offsetHeight > iy)
+						{
+							let itemIndex = parseInt(item.style.zIndex) || 0
+							if(zIndex <= itemIndex)
+							{
+								t.style.zIndex = "" + (itemIndex + 1)
+								zIndex = (itemIndex + 1)
+							}
+						}
+					}
+				})
+				e.target.classList.remove('active')
+			}
 		})
 		.resizable({
-			edges: {left: true, right: true, top: true, bottom: true},
-			inertia: true,
+			edges: {right: true, bottom: true},
+			inertia: false,
 			onmove: resize,
 			onstart: interactionStart
 		})
