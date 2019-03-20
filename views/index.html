@@ -12,6 +12,7 @@
 			margin: 0;
 			padding: 0;
 			min-height: 100vh;
+			overflow: hidden;
 		}
 		img {
 			border: 5px solid white;
@@ -31,6 +32,10 @@
 			el.style.left = image.x + 'px'
 			el.style.width = image.width + 'px'
 			el.style.height = image.height + 'px'
+			if(body.offsetWidth < image.x + image.width)
+				body.style.width = image.x + image.width + 20 + "px"
+			if(body.offsetHeight < image.y + image.height)
+				body.style.height = image.y + image.height + 20 + "px"
 			body.appendChild(el)
 		})
 	</script>

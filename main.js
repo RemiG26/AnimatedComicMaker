@@ -6,13 +6,21 @@ const fsPromises = require('fs').promises
 
 const nativeMenus = [
 	{
-		label: 'Modifier',
+		label: 'Fichier',
 		submenu: [
 			{
 				label: 'Modifier',
 				accelerator: process.platform === 'darwin' ? 'Alt+Cmd+M' : 'Ctrl+Shift+M',
 				click(){
 					showDigicode()
+				}
+			},
+			{
+				label: "Quitter",
+				accelerator: process.platform === 'darwin' ? 'Cmd+Q' : 'Ctrl+Q',
+				click()
+				{
+					mainWindow.close()
 				}
 			}
 		]
@@ -38,7 +46,8 @@ function showDigicode() {
 			minimizable: false,
 			fullscreenable: false,
 			parent: mainWindow,
-			modal: true
+			modal: true,
+			frame: false
 		})
 		codeWindow.loadFile('views/digicode.html')
 		ipc.on('cancel', () => {
@@ -50,7 +59,8 @@ function showDigicode() {
 				modifyWindow = new BrowserWindow({
 					fullscreen: true,
 					parent: mainWindow,
-					modal: false
+					modal: false,
+					frame: false
 				})
 				modifyWindow.loadFile('views/modify.html')
 				ipc.on('close', () => {
@@ -94,7 +104,6 @@ function showDigicode() {
 					let filename = base_path + '/bds/' + active.active + '/' + active.active + '.json'
 					fs.writeFileSync(filename, JSON.stringify(data.json))
 				})
-				modifyWindow.webContents.openDevTools()
 				modifyWindow.on('closed', () => {
 					modifyWindow = null
 				})
@@ -147,7 +156,8 @@ function uploadFile(file)
 
 function createWindow(){
 	mainWindow = new BrowserWindow({
-		fullscreen: true
+		fullscreen: true,
+		frame: false
 	})
 	mainWindow.loadFile('views/index.html')
 	mainWindow.on('closed', () => {
