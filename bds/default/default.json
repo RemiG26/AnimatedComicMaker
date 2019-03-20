@@ -1,0 +1,16 @@
+[
+  {
+    "url": "/home/remi/Lab/BDUgo/bds/default/foo.jpg",
+    "width": "100vw",
+    "height": "50vh",
+    "x": "0px",
+    "y": "0px"
+  },
+  {
+    "url": "/home/remi/Lab/BDUgo/bds/default/bar.jpg",
+    "width": "100vw",
+    "height": "75vh",
+    "x": "105vw",
+    "y": "0px"
+  }
+]

@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="fr">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport"
+		  content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>BD Ugo - Modification</title>
+	<style>
+		body {
+			background-color: black;
+			margin: 0;
+			padding: 0;
+			min-height: 1000vh;
+			position: relative;
+		}
+		img {
+			border: 5px solid white;
+			transform: translate3D(0, 0, 0);
+			transition: 0s;
+		}
+	</style>
+</head>
+<body>
+<script>
+	const active = require('../bds/active.json')
+	const interact = require('interactjs')
+	const _ = require('underscore')
+	const bd = require('../bds/' + active.active + '/' + active.active + '.json')
+	let html = document.querySelector('html')
+	let startPosition = null
+	bd.forEach((image) => {
+		let el = document.createElement("img")
+		el.src = image.url
+		el.style.position = "absolute"
+		el.style.top = image.y
+		el.style.left = image.x
+		el.style.width = image.width
+		el.style.height = image.height
+		document.body.appendChild(el)
+	})
+
+	const move = _.throttle((e) => {
+		let x = startPosition.x + e.clientX - e.clientX0 + html.scrollLeft - startPosition.scrollLeft
+		let y = startPosition.y + e.clientY - e.clientY0 + html.scrollTop - startPosition.scrollTop
+		e.target.style.transform = `translate3D(${x}px, ${y}px, 0)`
+	}, 16)
+
+	const savePosition = (e) => {
+
+	}
+
+	const resize = (e) => {
+		let target = e.target
+
+		target.style.width = e.rect.width + 'px'
+		target.style.height = e.rect.height + 'px'
+
+		let x = startPosition.x + e.deltaRect.left + html.scrollLeft - startPosition.scrollLeft
+		let y = startPosition.y + e.deltaRect.top + html.scrollTop - startPosition.scrollTop
+
+		target.style.transform = `translate3D(${x}px, ${y}px, 0)`
+	}
+
+	const interactionStart = (e) => {
+		let rect = e.target.getBoundingClientRect()
+		startPosition = {
+			x: rect.x,
+			y: rect.y,
+			scrollLeft: html.scrollLeft,
+			scrollTop: html.scrollTop
+		}
+		console.log(startPosition)
+	}
+
+	interact('img')
+		.origin('self')
+		.draggable({
+			inertia: false,
+			autoScroll: true,
+			onmove: move,
+			onend: savePosition,
+			onstart: interactionStart
+		})
+		.resizable({
+			edges: {left: true, right: true, top: true, bottom: true},
+			inertia: true,
+			onmove: resize,
+			onstart: interactionStart
+		})
+
+</script>
+</body>
+</html>

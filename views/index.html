@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="fr">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport"
+		  content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>BD Ugo</title>
+	<style>
+		body {
+			background-color: black;
+			margin: 0;
+			padding: 0;
+			min-height: 100vh;
+		}
+		img {
+			border: 5px solid white;
+		}
+	</style>
+</head>
+<body class="dragscroll">
+	<script>
+		const active = require('../bds/active.json')
+		const bd = require('../bds/' + active.active + '/' + active.active + '.json')
+		let body = document.querySelector('body')
+		bd.forEach((image) => {
+			let el = document.createElement("img")
+			el.src = image.url
+			el.style.position = "absolute"
+			el.style.top = image.y
+			el.style.left = image.x
+			el.style.width = image.width
+			el.style.height = image.height
+			body.appendChild(el)
+		})
+	</script>
+	<script type="text/javascript" src="../js/dragscroll.js"></script>
+</body>
+</html>

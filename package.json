@@ -1,0 +1,15 @@
+{
+  "name": "bdugo",
+  "version": "1.0.0",
+  "main": "main.js",
+  "author": "Rémi Gavin <remi.gavin38@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron ."
+  },
+  "dependencies": {
+    "electron": "^4.1.0",
+    "interactjs": "^1.3.4",
+    "underscore": "^1.9.1"
+  }
+}
