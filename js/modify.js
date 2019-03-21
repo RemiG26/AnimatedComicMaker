@@ -65,6 +65,17 @@ document.querySelector('#addButton').addEventListener('click', () => {
 	ipc.send('upload')
 })
 
+document.querySelector('#exportBD').addEventListener('click', () => {
+	let selectedValue = getSelectedValue()
+	ipc.send('exportBD', {
+		bd: selectedValue
+	})
+})
+
+document.querySelector('#exportBDS').addEventListener('click', () => {
+	ipc.send('exportBDS')
+})
+
 // ipc listener
 ipc.on('configSaved', () => {
 	M.toast({html: "Configuration sauvée!"})

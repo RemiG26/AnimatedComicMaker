@@ -99,7 +99,6 @@ function createWindow(){
 		frame: false
 	})
 	mainWindow.loadFile('views/index.html')
-	mainWindow.webContents.openDevTools()
 	mainWindow.on('closed', () => {
 		mainWindow = null
 	})
@@ -237,6 +236,7 @@ ipc.on('validate', (e, data) => {
 ipc.on('closeModification', () => {
 	modifyWindow.close()
 	mainWindow.reload()
+	mainWindow.focus()
 })
 
 // Insert new image
@@ -326,4 +326,30 @@ ipc.on('deleteImage', (e, data) => {
 		}
 	})
 	e.sender.send('configSaved')
+})
+
+ipc.on('exportBD', (e, data) => {
+
+})
+
+ipc.on('exportBDS', () => {
+	let filePath = dialog.showSaveDialog(modifyWindow, {
+		title: 'Exporter tout',
+		nameFieldLabel: "bds.json"
+	})
+	let configs = []
+	let bdsPath = base_path + '/bds'
+	let files = fs.readdirSync(bdsPath, {
+		encoding: 'utf8',
+		withFileTypes: true
+	})
+	if(files) {
+		files.forEach(item => {
+			if (item.isDirectory()) {
+				let c = JSON.parse("" + fs.readFileSync(`${base_path}/bds/${item.name}/${item.name}.json`))
+				configs = [...c, ...configs]
+			}
+		})
+	}
+	fs.writeFileSync(filePath, JSON.stringify(configs))
 })
