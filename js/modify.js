@@ -1,8 +1,14 @@
 const ipc = require('electron').ipcRenderer
-const active = require('../bds/active.json')
+const path = require('path')
 const Drag = require('../js/Drag')
 const fs = require('fs')
-const bd = require('../bds/' + active.active + '/' + active.active + '.json')
+
+let base_path = path.dirname(__dirname).split('/')
+base_path.pop()
+base_path = base_path.join('/')
+
+const active = require(base_path + '/bds/active.json')
+const bd = require(`${base_path}/bds/${active.active}/${active.active}.json`)
 
 // Global variables
 let items = []
@@ -96,7 +102,7 @@ function insertImages()
 
 function getBds()
 {
-	let bdsPath = fs.realpathSync('./bds')
+	let bdsPath = base_path + '/bds'
 	let files = fs.readdirSync(bdsPath, {
 		encoding: 'utf8',
 		withFileTypes: true

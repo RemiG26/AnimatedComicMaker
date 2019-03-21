@@ -6,7 +6,7 @@ const rimraf = require('rimraf')
 
 // Windows and other global variables
 let mainWindow, codeWindow, modifyWindow
-const base_path = path.resolve(__dirname)
+const base_path = path.dirname(__dirname)
 
 // Create menus for each windows
 const nativeMenusTemplate = [
@@ -17,7 +17,6 @@ const nativeMenusTemplate = [
 				label: 'Modifier',
 				accelerator: process.platform === 'darwin' ? 'Alt+Cmd+M' : 'Ctrl+Shift+M',
 				click(){
-					console.log('Modify')
 					showDigicode()
 				}
 			},
@@ -80,11 +79,27 @@ Menu.setApplicationMenu(nativeMenu)
 
 // Create the main window
 function createWindow(){
+	let bdsPath = base_path + '/bds'
+	let activePath = base_path + '/bds/active.json'
+	if(!fs.existsSync(bdsPath))
+	{
+		fs.mkdirSync(bdsPath)
+	}
+	if(!fs.existsSync(activePath))
+	{
+		fs.writeFileSync(activePath, JSON.stringify({
+			active: "default"
+		}))
+		fs.mkdirSync(bdsPath + '/default')
+		fs.writeFileSync(bdsPath + '/default/default.json', "[]")
+	}
+
 	mainWindow = new BrowserWindow({
 		fullscreen: true,
 		frame: false
 	})
 	mainWindow.loadFile('views/index.html')
+	mainWindow.webContents.openDevTools()
 	mainWindow.on('closed', () => {
 		mainWindow = null
 	})

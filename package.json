@@ -1,5 +1,6 @@
 {
   "name": "bdugo",
+  "productName": "BD Ugo",
   "version": "1.0.0",
   "main": "main.js",
   "author": "Rémi Gavin <remi.gavin38@gmail.com>",

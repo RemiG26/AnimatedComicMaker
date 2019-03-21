@@ -21,8 +21,12 @@
 </head>
 <body class="dragscroll">
 	<script>
-		const active = require('../bds/active.json')
-		const bd = require('../bds/' + active.active + '/' + active.active + '.json')
+		const path = require('path')
+		let base_path = path.dirname(__dirname).split('/')
+		base_path.pop()
+		base_path = base_path.join('/')
+		const active = require(base_path + '/bds/active.json')
+		const bd = require(`${base_path}/bds/${active.active}/${active.active}.json`)
 		let body = document.querySelector('body')
 		bd.forEach((image) => {
 			let el = document.createElement("img")
