@@ -3,6 +3,7 @@ const ipc = require('electron').ipcMain
 const path = require('path')
 const fs = require('fs')
 const fsPromises = require('fs').promises
+const rimraf = require('rimraf')
 
 const nativeMenus = [
 	{
@@ -98,6 +99,29 @@ function showDigicode() {
 					active.active = data.folder
 					fs.writeFileSync(filepath, JSON.stringify(active))
 					modifyWindow.reload()
+				})
+				ipc.on('deleteBD', (e, data) => {
+					let filepath = base_path + '/bds/active.json'
+					let active = JSON.parse(fs.readFileSync(filepath))
+					let bdsPath = fs.realpathSync('./bds')
+					let dirs = fs.readdirSync(bdsPath, {
+						encoding: 'utf8',
+						withFileTypes: true
+					})
+					if(dirs)
+					{
+						dirs.forEach((item, index) => {
+							if(item.name === data.folder)
+							{
+								rimraf.sync(bdsPath + '/' + data.folder)
+								dirs.splice(index, 1)
+								dirs.forEach((item) => item.isDirectory() ? active.active = item.name : null)
+								fs.writeFileSync(filepath, JSON.stringify(active))
+								modifyWindow.reload()
+								return false
+							}
+						})
+					}
 				})
 				ipc.on('save', (e, data) => {
 					let active = JSON.parse(fs.readFileSync(base_path + '/bds/active.json'))

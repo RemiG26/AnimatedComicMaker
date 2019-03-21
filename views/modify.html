@@ -48,13 +48,16 @@
 		<div class="modal-content">
 			<h4>Choisir une BD</h4>
 			<div class="row">
-				<div class="input-field col s12 m10">
+				<div class="input-field col s12 m8">
 					<select id="selectionInput">
 					</select>
 					<label>BD</label>
 				</div>
 				<div class="input-field col s12 m2">
 					<button class="btn" id="changeBD">Changer</button>
+				</div>
+				<div class="input-field col s12 m2">
+					<button class="btn red" id="deleteBD">Supprimer</button>
 				</div>
 			</div>
 			<hr>
@@ -82,7 +85,6 @@
 		document.addEventListener('DOMContentLoaded', function(){
 			M.FloatingActionButton.init(document.querySelectorAll('.fixed-action-btn'))
 			M.Modal.init(document.querySelectorAll('.modal'))
-
 		})
 
 		document.querySelector('#close').addEventListener('click', () => {
@@ -136,6 +138,16 @@
 			let value = selectedOption.innerText || null
 			if(value && value !== active.active)
 				ipc.send('changeBD', {
+					folder: value
+				})
+		})
+
+		document.querySelector("#deleteBD").addEventListener('click', () => {
+			let instance = M.FormSelect.getInstance(selectionInput)
+			let selectedOption = instance.wrapper.querySelector('.selected')
+			let value = selectedOption.innerText || null
+			if(value)
+				ipc.send('deleteBD', {
 					folder: value
 				})
 		})
