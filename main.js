@@ -5,7 +5,12 @@ const fs = require('fs')
 const fsPromises = require('fs').promises
 const rimraf = require('rimraf')
 
-const nativeMenus = [
+// Windows and other global variables
+let mainWindow, codeWindow, modifyWindow
+const base_path = path.resolve(__dirname)
+
+// Create menus for each windows
+const nativeMenusTemplate = [
 	{
 		label: 'Fichier',
 		submenu: [
@@ -13,6 +18,7 @@ const nativeMenus = [
 				label: 'Modifier',
 				accelerator: process.platform === 'darwin' ? 'Alt+Cmd+M' : 'Ctrl+Shift+M',
 				click(){
+					console.log('Modify')
 					showDigicode()
 				}
 			},
@@ -21,20 +27,73 @@ const nativeMenus = [
 				accelerator: process.platform === 'darwin' ? 'Cmd+Q' : 'Ctrl+Q',
 				click()
 				{
+					modifyWindow.close()
+					codeWindow.close()
 					mainWindow.close()
 				}
 			}
 		]
 	}
 ]
+const modifyMenuTemplate = [
+	{
+		label: 'Fichier',
+		submenu: [
+			{
+				label: "Enregistrer",
+				accelerator: process.platform === 'darwin' ? 'Cmd+S' : 'Ctrl+S',
+				click(){
+					modifyWindow.webContents.send('saveRequest')
+				}
+			},
+			{
+				label: "Quitter la modification",
+				accelerator: process.platform === 'darwin' ? 'Cmd+Q' : 'Ctrl+Q',
+				click(){
+					modifyWindow.close()
+					mainWindow.reload()
+					mainWindow.focus()
+				}
+			}
+		]
+	},
+	{
+		label: 'Editer',
+		submenu: [
+			{
+				label: "Ajouter une image",
+				accelerator: process.platform === 'darwin' ? 'Cmd+I' : 'Ctrl+I',
+				click(){
+					addImage()
+				}
+			},
+			{
+				label: "Gestion des BDs",
+				accelerator: process.platform === 'darwin' ? 'Cmd+D' : 'Ctrl+D',
+				click(){
+					modifyWindow.webContents.send('openModal')
+				}
+			}
+		]
+	}
+]
+const nativeMenu = Menu.buildFromTemplate(nativeMenusTemplate)
+const modifyMenu = Menu.buildFromTemplate(modifyMenuTemplate)
+Menu.setApplicationMenu(nativeMenu)
 
-const menu = Menu.buildFromTemplate(nativeMenus)
-Menu.setApplicationMenu(menu)
+// Create the main window
+function createWindow(){
+	mainWindow = new BrowserWindow({
+		fullscreen: true,
+		frame: false
+	})
+	mainWindow.loadFile('views/index.html')
+	mainWindow.on('closed', () => {
+		mainWindow = null
+	})
+}
 
-let mainWindow, codeWindow, modifyWindow
-
-const base_path = path.resolve(__dirname)
-
+// Create and display a digicode to protect the modification page
 function showDigicode() {
 	if (codeWindow) {
 		codeWindow.show()
@@ -50,121 +109,44 @@ function showDigicode() {
 			modal: true,
 			frame: false
 		})
+		codeWindow.setMenu(null)
 		codeWindow.loadFile('views/digicode.html')
-		ipc.on('cancel', () => {
-			codeWindow.hide()
-			mainWindow.focus()
-		})
-		ipc.on('validate', (e, data) => {
-			if (data.code === 34000) {
-				modifyWindow = new BrowserWindow({
-					fullscreen: true,
-					parent: mainWindow,
-					modal: false,
-					frame: false
-				})
-				modifyWindow.loadFile('views/modify.html')
-				ipc.on('close', () => {
-					modifyWindow.close()
-					mainWindow.reload()
-				})
-				ipc.on('upload', () => {
-					dialog.showOpenDialog(modifyWindow, {
-						title: 'Ajoutez une image',
-
-						properties: ['openFile']
-					}, (files) => {
-						if(files)
-						{
-							files.forEach(file => {
-								uploadFile(file)
-							})
-						}
-					})
-				})
-				ipc.on('newBD', (e, data) => {
-					let dirpath = base_path + '/bds/' + data.name
-					let filepath = dirpath + '/' + data.name + '.json'
-					fs.mkdirSync(dirpath)
-					fs.writeFileSync(filepath, "[]")
-					let activePath = base_path + '/bds/active.json'
-					let active = JSON.parse(fs.readFileSync(activePath))
-					active.active = data.name
-					fs.writeFileSync(activePath, JSON.stringify(active))
-					modifyWindow.reload()
-				})
-				ipc.on('changeBD', (e, data) => {
-					let filepath = base_path + '/bds/active.json'
-					let active = JSON.parse(fs.readFileSync(filepath))
-					active.active = data.folder
-					fs.writeFileSync(filepath, JSON.stringify(active))
-					modifyWindow.reload()
-				})
-				ipc.on('deleteBD', (e, data) => {
-					let filepath = base_path + '/bds/active.json'
-					let active = JSON.parse(fs.readFileSync(filepath))
-					let bdsPath = fs.realpathSync('./bds')
-					let dirs = fs.readdirSync(bdsPath, {
-						encoding: 'utf8',
-						withFileTypes: true
-					})
-					if(dirs)
-					{
-						dirs.forEach((item, index) => {
-							if(item.name === data.folder)
-							{
-								rimraf.sync(bdsPath + '/' + data.folder)
-								dirs.splice(index, 1)
-								dirs.forEach((item) => item.isDirectory() ? active.active = item.name : null)
-								fs.writeFileSync(filepath, JSON.stringify(active))
-								modifyWindow.reload()
-								return false
-							}
-						})
-					}
-				})
-				ipc.on('save', (e, data) => {
-					let active = JSON.parse(fs.readFileSync(base_path + '/bds/active.json'))
-					let filename = base_path + '/bds/' + active.active + '/' + active.active + '.json'
-					fs.writeFileSync(filename, JSON.stringify(data.json))
-				})
-				ipc.on('deleteImage', (e, data) => {
-					dialog.showMessageBox(modifyWindow, {
-						type: "question",
-						buttons: ["Annuler", "Ok"],
-						title: "Attention",
-						message: "Voulez-vous supprimer cette image ?"
-					}, (response) => {
-						if(response === 1)
-						{
-							let active = JSON.parse(fs.readFileSync(base_path + '/bds/active.json'))
-							let filename = base_path + '/bds/' + active.active + '/' + active.active + '.json'
-							let config = JSON.parse(fs.readFileSync(filename, JSON.stringify(data.json)))
-							let image = data.image.split('/')
-							image.shift()
-							image.shift()
-							image = image.join('/')
-							console.log(image)
-							config = config.filter(item => item.url !== image)
-							fs.writeFileSync(filename, JSON.stringify(config))
-							fs.unlinkSync(image)
-							modifyWindow.reload()
-						}
-					})
-				})
-				modifyWindow.on('closed', () => {
-					modifyWindow = null
-				})
-				codeWindow.hide()
-			} else {
-				e.sender.send('errorReply', {
-					error: 'Invalide!'
-				})
-			}
-		})
 	}
 }
 
+// Electron stuff to launch the app
+app.on('ready', createWindow)
+app.on('window-all-closed', () => {
+	if(process.platform !== 'darwin')
+		app.quit()
+})
+app.on('activate', () => {
+	if(mainWindow === null)
+		createWindow()
+})
+
+// Show file dialog to pick and image
+function addImage()
+{
+	dialog.showOpenDialog(modifyWindow, {
+		title: 'Ajoutez une image',
+
+		properties: ['openFile']
+	}, (files) => {
+		if(files)
+		{
+			files.forEach(file => {
+				uploadFile(file)
+			})
+		}
+	})
+}
+
+/**
+ * Save image in app
+ * TODO: Refactor using Sync calls
+ * @param {string} file
+ */
 function uploadFile(file)
 {
 	let dirs = file.split('/')
@@ -191,6 +173,7 @@ function uploadFile(file)
 						.catch((err) => console.log(err))
 				})
 				.catch(err => {
+					console.log(err)
 					dialog.showErrorBox("Erreur lors de l'importation", "Erreur lors de la lecture du fichier de configuration")
 				})
 
@@ -201,25 +184,148 @@ function uploadFile(file)
 		})
 }
 
-function createWindow(){
-	mainWindow = new BrowserWindow({
-		fullscreen: true,
-		frame: false
-	})
-	mainWindow.loadFile('views/index.html')
-	mainWindow.on('closed', () => {
-		mainWindow = null
-	})
+/**
+ * Get active.json content
+ * @returns {Object}
+ */
+function getActive()
+{
+	let filepath = base_path + '/bds/active.json'
+	return JSON.parse("" + fs.readFileSync(filepath))
 }
 
-app.on('ready', createWindow)
+/**
+ * Replace active.json content
+ * @param {Object} content
+ */
+function setActive(content)
+{
+	let filepath = base_path + '/bds/active.json'
+	fs.writeFileSync(filepath, JSON.stringify(content))
+}
 
-app.on('window-all-closed', () => {
-	if(process.platform !== 'darwin')
-		app.quit()
+function saveConfig(newConfig)
+{
+	let active = getActive()
+	let filename = base_path + '/bds/' + active.active + '/' + active.active + '.json'
+	fs.writeFileSync(filename, JSON.stringify(newConfig))
+}
+
+// Go back to main window
+ipc.on('cancel', () => {
+	codeWindow.hide()
+	mainWindow.focus()
 })
 
-app.on('activate', () => {
-	if(mainWindow === null)
-		createWindow()
+// Check the code and if correct show the modification page
+ipc.on('validate', (e, data) => {
+	if (data.code === 34000) {
+		modifyWindow = new BrowserWindow({
+			fullscreen: true,
+			parent: mainWindow,
+			modal: false,
+			frame: false
+		})
+		modifyWindow.setMenu(modifyMenu)
+		modifyWindow.loadFile('views/modify.html')
+		modifyWindow.on('closed', () => {
+			modifyWindow = null
+		})
+		codeWindow.hide()
+	} else {
+		e.sender.send('errorReply', {
+			error: 'Invalide!'
+		})
+	}
+})
+
+// Close the modification window and reload the main one to take effect of changes
+ipc.on('closeModification', () => {
+	modifyWindow.close()
+	mainWindow.reload()
+})
+
+// Insert new image
+ipc.on('upload', () => {
+	addImage()
+})
+
+// Create a new BD
+ipc.on('newBD', (e, data) => {
+	let dirpath = base_path + '/bds/' + data.name
+	let filepath = dirpath + '/' + data.name + '.json'
+	fs.mkdirSync(dirpath)
+	fs.writeFileSync(filepath, "[]")
+	setActive({
+		active: data.name
+	})
+	modifyWindow.reload()
+})
+
+// Modify active BD by modifying active.json file
+ipc.on('changeBD', (e, data) => {
+	setActive({
+		active: data.folder
+	})
+	modifyWindow.reload()
+})
+
+// Delete a BD and all files associated to it
+ipc.on('deleteBD', (e, data) => {
+	let bdsPath = fs.realpathSync('./bds')
+	let dirs = fs.readdirSync(bdsPath, {
+		encoding: 'utf8',
+		withFileTypes: true
+	})
+	if(dirs)
+	{
+		dirs.forEach((item, index) => {
+			if(item.name === data.folder)
+			{
+				rimraf.sync(bdsPath + '/' + data.folder)
+				dirs.splice(index, 1)
+				let active = {
+					active: null
+				}
+				dirs.forEach((item) => item.isDirectory() ? active.active = item.name : null)
+				setActive(active)
+				modifyWindow.reload()
+				return false
+			}
+		})
+	}
+})
+
+// Save new state of bd
+ipc.on('save', (e, data) => {
+	saveConfig(data.json)
+	e.sender.send('configSaved')
+})
+
+// Show dialog to confirm supression of image
+ipc.on('deleteImage', (e, data) => {
+	dialog.showMessageBox(modifyWindow, {
+		type: "question",
+		buttons: ["Annuler", "Ok"],
+		title: "Attention",
+		message: "Voulez-vous supprimer cette image ?"
+	}, (response) => {
+		if(response === 1) // Response is the index of the button clicked in this case 1 is "Ok"
+		{
+			let active = getActive()
+			let filename = base_path + '/bds/' + active.active + '/' + active.active + '.json'
+			let activeConfig = JSON.parse(fs.readFileSync(filename, JSON.stringify(data.json)))
+			// Transform data.image from "file:///home/..." to "/home/..."
+			let image = data.image.split('/')
+			image.slice(0, 2)
+			image = "" + image.join('/')
+			// Remove image from json config file
+			activeConfig = activeConfig.filter(item => item.url !== image)
+			fs.writeFileSync(filename, JSON.stringify(activeConfig))
+			// Delete file
+			fs.unlinkSync("" + image)
+			modifyWindow.reload()
+		}
+	})
+	e.sender.send('configSaved')
 })
