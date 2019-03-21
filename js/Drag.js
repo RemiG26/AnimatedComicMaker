@@ -1,4 +1,5 @@
 const interact = require('interactjs')
+const ipc = require('electron').ipcRenderer
 const _ = require('underscore')
 
 class Drag
@@ -69,10 +70,9 @@ class Drag
 
 	hold(e)
 	{
-		if(confirm('Voulez-vous vraiment supprimer cette image ?'))
-		{
-
-		}
+		ipc.send('deleteImage', {
+			image: e.target.src
+		})
 	}
 
 	resize (e) {

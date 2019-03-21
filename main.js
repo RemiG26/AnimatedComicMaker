@@ -104,6 +104,30 @@ function showDigicode() {
 					let filename = base_path + '/bds/' + active.active + '/' + active.active + '.json'
 					fs.writeFileSync(filename, JSON.stringify(data.json))
 				})
+				ipc.on('deleteImage', (e, data) => {
+					dialog.showMessageBox(modifyWindow, {
+						type: "question",
+						buttons: ["Annuler", "Ok"],
+						title: "Attention",
+						message: "Voulez-vous supprimer cette image ?"
+					}, (response) => {
+						if(response === 1)
+						{
+							let active = JSON.parse(fs.readFileSync(base_path + '/bds/active.json'))
+							let filename = base_path + '/bds/' + active.active + '/' + active.active + '.json'
+							let config = JSON.parse(fs.readFileSync(filename, JSON.stringify(data.json)))
+							let image = data.image.split('/')
+							image.shift()
+							image.shift()
+							image = image.join('/')
+							console.log(image)
+							config = config.filter(item => item.url !== image)
+							fs.writeFileSync(filename, JSON.stringify(config))
+							fs.unlinkSync(image)
+							modifyWindow.reload()
+						}
+					})
+				})
 				modifyWindow.on('closed', () => {
 					modifyWindow = null
 				})
@@ -143,7 +167,6 @@ function uploadFile(file)
 						.catch((err) => console.log(err))
 				})
 				.catch(err => {
-					console.log(err)
 					dialog.showErrorBox("Erreur lors de l'importation", "Erreur lors de la lecture du fichier de configuration")
 				})
 
