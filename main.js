@@ -96,7 +96,7 @@ function showDigicode() {
 		codeWindow.show()
 	} else {
 		codeWindow = new BrowserWindow({
-			height: 400,
+			height: 500,
 			resizable: false,
 			width: 200,
 			title: 'Code ?',
@@ -294,15 +294,19 @@ ipc.on('deleteImage', (e, data) => {
 			let active = getActive()
 			let filename = base_path + '/bds/' + active.active + '/' + active.active + '.json'
 			let activeConfig = JSON.parse(fs.readFileSync(filename, JSON.stringify(data.json)))
-			// Transform data.image from "file:///home/..." to "/home/..."
-			let image = data.image.split('/')
-			image.slice(0, 2)
-			image = "" + image.join('/')
+			let image = data.image
+			if(image.indexOf("file://") - 1)
+			{
+				// Transform data.image from "file:///home/..." to "/home/..."
+				image = image.split('/')
+				image.slice(0, 2)
+				image = "" + image.join('/')
+			}
 			// Remove image from json config file
 			activeConfig = activeConfig.filter(item => item.url !== image)
 			fs.writeFileSync(filename, JSON.stringify(activeConfig))
 			// Delete file
-			fs.unlinkSync("" + image)
+			fs.unlinkSync(image)
 			modifyWindow.reload()
 		}
 	})

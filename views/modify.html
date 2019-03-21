@@ -5,30 +5,9 @@
 	<meta name="viewport"
 		  content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
 	<meta http-equiv="X-UA-Compatible" content="ie=edge">
-	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+	<link rel="stylesheet" href="../css/materializecss.css">
+	<link rel="stylesheet" href="../css/modify.css">
 	<title>BD Ugo - Modification</title>
-	<style>
-		body {
-			background-color: black;
-			margin: 0;
-			padding: 0;
-			min-height: 1000vh;
-			position: relative;
-		}
-		img {
-			border: 5px solid white;
-			transform: translate3D(0, 0, 0);
-			transition: 0s;
-			position: absolute;
-			top: 0;
-			left: 0;
-			z-index: 0;
-		}
-		.active {
-			z-index: 998;
-		}
-	</style>
 </head>
 <body>
 	<div class="fixed-action-btn">
@@ -72,136 +51,7 @@
 		</div>
 	</div>
 
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
-	<script src="../js/dragscroll.js"></script>
-	<script>
-		const ipc = require('electron').ipcRenderer
-		const active = require('../bds/active.json')
-		const Drag = require('../js/Drag')
-		const fs = require('fs')
-		const bd = require('../bds/' + active.active + '/' + active.active + '.json')
-
-		document.addEventListener('DOMContentLoaded', function(){
-			M.FloatingActionButton.init(document.querySelectorAll('.fixed-action-btn'))
-			M.Modal.init(document.querySelectorAll('.modal'))
-		})
-
-		document.querySelector('#close').addEventListener('click', () => {
-			ipc.send('closeModification')
-		})
-
-		document.querySelector('#save').addEventListener('click', () => {
-			let json = []
-			items.forEach(item => {
-				let p = Drag.getTransform(item)
-				json.push({
-					url: item.src,
-					zIndex: parseInt(item.zIndex) || 0,
-					width: item.offsetWidth,
-					height: item.offsetHeight,
-					x: p[0],
-					y: p[1]
-				})
-			})
-			ipc.send('save', { json })
-		})
-
-		document.querySelector('#createBD').addEventListener('click', () => {
-			ipc.send('newBD', {
-				name: document.querySelector('#newBDName').value
-			})
-		})
-
-		let selectionInput = document.querySelector('#selectionInput')
-		let path = fs.realpathSync('./bds')
-		let files = fs.readdirSync(path, {
-			encoding: 'utf8',
-			withFileTypes: true
-		})
-		if(files)
-		{
-			files.forEach((item) => {
-				if(item.isDirectory())
-				{
-					let option = document.createElement("option")
-					option.innerText = item.name
-					selectionInput.appendChild(option)
-				}
-			})
-		}
-		M.FormSelect.init(selectionInput)
-
-		document.querySelector("#changeBD").addEventListener('click', () => {
-			let instance = M.FormSelect.getInstance(selectionInput)
-			let selectedOption = instance.wrapper.querySelector('.selected')
-			let value = selectedOption.innerText || null
-			if(value && value !== active.active)
-				ipc.send('changeBD', {
-					folder: value
-				})
-		})
-
-		document.querySelector("#deleteBD").addEventListener('click', () => {
-			let instance = M.FormSelect.getInstance(selectionInput)
-			let selectedOption = instance.wrapper.querySelector('.selected')
-			let value = selectedOption.innerText || null
-			if(value)
-				ipc.send('deleteBD', {
-					folder: value
-				})
-		})
-
-		// Display images
-		let items = []
-		bd.forEach((image) => {
-			let el = document.createElement("img")
-			el.src = image.url
-			el.classList.add('img')
-			el.style.transform = `translate3d(${image.x}px, ${image.y}px, 0)`
-			el.style.width = image.width + 'px'
-			el.style.height = image.height + 'px'
-			if(document.body.offsetWidth < image.x + image.width)
-				document.body.style.width = image.x + image.width + 20 + "px"
-			if(document.body.offsetHeight < image.y + image.height)
-				document.body.style.height = image.y + image.height + 20 + "px"
-			document.body.appendChild(el)
-			items.push(el)
-		})
-		// Init Drag onto images
-		new Drag(items, 'img')
-
-		// Add Image
-		let addBtn = document.querySelector('#addButton')
-		addBtn.addEventListener('click', () => {
-			ipc.send('upload')
-		})
-
-		ipc.on('configSaved', () => {
-			M.toast({html: "Configuration sauvée!"})
-		})
-
-		ipc.on('saveRequest', () => {
-			let json = []
-			items.forEach(item => {
-				let p = Drag.getTransform(item)
-				json.push({
-					url: item.src,
-					zIndex: parseInt(item.zIndex) || 0,
-					width: item.offsetWidth,
-					height: item.offsetHeight,
-					x: p[0],
-					y: p[1]
-				})
-			})
-			ipc.send('save', { json })
-		})
-
-		ipc.on('openModal', () => {
-			let instance = M.Modal.getInstance(document.querySelector('#selectionModal'))
-			debugger
-			if(!instance.isOpen)
-				instance.open()
-		})
-	</script>
+	<script src="../js/materializecss.js"></script>
+	<script src="../js/modify.js"></script>
 </body>
 </html>

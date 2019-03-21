@@ -5,61 +5,93 @@
 	<meta name="viewport"
 		  content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
 	<meta http-equiv="X-UA-Compatible" content="ie=edge">
-	<title>Document</title>
+	<link rel="stylesheet" href="../css/materializecss.css">
 	<style>
-		.container {
-			margin-top: 30px;
-			display: flex;
-			flex: 1;
-			flex-direction: row;
-			flex-wrap: wrap;
-		}
-		.item {
-			width: 30vw;
-			background-color: grey;
-			padding: 10px;
-			border: 1px solid black;
-		}
-		.hidden {
-			display: none;
-		}
-		.error {
-			background-color: rgba(255,0,23,0.58);
-			color: #7e0019;
-			padding: 20px;
-		}
-		input {
-			width: 60vw;
-			margin-bottom: 20px;
-		}
-		.delete {
-			width: 20vw;
-			margin-bottom: 20px;
+		body {
+			overflow: hidden;
+			padding: 0;
+			margin: 0;
 		}
 	</style>
+	<title>Document</title>
 </head>
 <body>
-	<p class="hidden error" id="error">Invalid!</p>
 	<div class="container">
-		<input type="text" id="code" disabled>
-		<button class="delete">x</button>
-		<button class="item number">1</button>
-		<button class="item number">2</button>
-		<button class="item number">3</button>
-		<button class="item number">4</button>
-		<button class="item number">5</button>
-		<button class="item number">6</button>
-		<button class="item number">7</button>
-		<button class="item number">8</button>
-		<button class="item number">9</button>
-		<button class="item" id="cancel">Cancel</button>
-		<button class="item number">0</button>
-		<button class="item" id="validate">OK</button>
+		<div class="row hiddendiv" id="error">
+			<div class="col s12">
+				<div class="card-panel red">
+					<span class="white-text">Code invalide!</span>
+				</div>
+			</div>
+		</div>
+		<div class="container">
+			<div class="row valign-wrapper">
+				<div class="col s10 input-field">
+					<input type="text" disabled placeholder="Code ?" id="code">
+				</div>
+				<div class="col s2 valign-wrapper">
+					<button class="btn btn-flat" id="deleteBtn">
+						<i class="material-icons">backspace</i>
+					</button>
+				</div>
+			</div>
+		</div>
+		<div class="container">
+			<div class="row">
+				<div class="col s4">
+					<button class="btn btn-flat number">1</button>
+				</div>
+				<div class="col s4">
+					<button class="btn btn-flat number">2</button>
+				</div>
+				<div class="col s4">
+					<button class="btn btn-flat number">3</button>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col s4">
+					<button class="btn btn-flat number">4</button>
+				</div>
+				<div class="col s4">
+					<button class="btn btn-flat number">5</button>
+				</div>
+				<div class="col s4">
+					<button class="btn btn-flat number">6</button>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col s4">
+					<button class="btn btn-flat number">6</button>
+				</div>
+				<div class="col s4">
+					<button class="btn btn-flat number">7</button>
+				</div>
+				<div class="col s4">
+					<button class="btn btn-flat number">8</button>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col s4">
+					<button class="btn btn-flat">
+						<i class="material-icons" id="cancel">cancel</i>
+					</button>
+				</div>
+				<div class="col s4">
+					<button class="btn btn-flat number">0</button>
+				</div>
+				<div class="col s4">
+					<button class="btn btn-flat">
+						<i class="material-icons" id="validate">check</i>
+					</button>
+				</div>
+			</div>
+		</div>
 	</div>
+	<script src="../js/materializecss.js"></script>
 	<script>
 		const ipc = require('electron').ipcRenderer
 		let input = document.querySelector("#code")
-		let deleteBtn = document.querySelector(".delete")
+		let deleteBtn = document.querySelector("#delete")
 		let error = document.querySelector("#error")
 		let items = document.querySelectorAll(".number")
 		let cancel = document.querySelector("#cancel")
@@ -70,15 +102,15 @@
 				input.value += e.target.innerText
 			})
 		})
-		cancel.addEventListener('click', (e) => {
+		cancel.addEventListener('click', () => {
 			ipc.send('cancel')
 		})
-		validate.addEventListener('click', (e) => {
-			ipc.once('errorReply', (e, response) => {
-				if(error.classList.contains('hidden'))
-					error.classList.remove('hidden')
+		validate.addEventListener('click', () => {
+			ipc.once('errorReply', () => {
+				if(error.classList.contains('hiddendiv'))
+					error.classList.remove('hiddendiv')
 			})
-			error.classList.add('hidden')
+			error.classList.add('hiddendiv')
 			ipc.send('validate', {
 				code: parseInt(input.value)
 			})
