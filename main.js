@@ -2,7 +2,6 @@ const { app, BrowserWindow, Menu, dialog } = require('electron')
 const ipc = require('electron').ipcMain
 const path = require('path')
 const fs = require('fs')
-const fsPromises = require('fs').promises
 const rimraf = require('rimraf')
 
 // Windows and other global variables
@@ -27,9 +26,7 @@ const nativeMenusTemplate = [
 				accelerator: process.platform === 'darwin' ? 'Cmd+Q' : 'Ctrl+Q',
 				click()
 				{
-					modifyWindow.close()
-					codeWindow.close()
-					mainWindow.close()
+					app.quit()
 				}
 			}
 		]
@@ -144,44 +141,26 @@ function addImage()
 
 /**
  * Save image in app
- * TODO: Refactor using Sync calls
  * @param {string} file
  */
 function uploadFile(file)
 {
 	let dirs = file.split('/')
 	let name = dirs[dirs.length - 1]
-	let active = JSON.parse(fs.readFileSync(base_path + '/bds/active.json'))
+	let active = JSON.parse("" + fs.readFileSync(base_path + '/bds/active.json'))
 	let filepath = base_path + '/bds/'+ active.active + '/' + name
-	fsPromises.copyFile(file, filepath)
-		.then(() => {
-			fsPromises.readFile(base_path + '/bds/'+ active.active + '/' + active.active +'.json')
-				.then(data => {
-					let newImage =   {
-						"url": filepath,
-						"width": "50vw",
-						"height": "50vh",
-						"x": "0px",
-						"y": "0px"
-					}
-					let config = JSON.parse(data)
-					config.push(newImage)
-					fsPromises.writeFile(base_path + '/bds/'+ active.active +'/' + active.active + '.json', JSON.stringify(config))
-						.then(() => {
-							modifyWindow.reload()
-						})
-						.catch((err) => console.log(err))
-				})
-				.catch(err => {
-					console.log(err)
-					dialog.showErrorBox("Erreur lors de l'importation", "Erreur lors de la lecture du fichier de configuration")
-				})
-
-		})
-		.catch((err) => {
-			console.log(err)
-			dialog.showErrorBox("Erreur lors de l'importation", "Erreur lors de la copie de l'image")
-		})
+	fs.copyFileSync(file, filepath)
+	let activeConfPath = `${base_path}/bds/${active.active}/${active.active}.json`
+	let activeConf = JSON.parse(""+ fs.readFileSync(activeConfPath))
+	activeConf.push({
+		"url": filepath,
+		"width": "50vw",
+		"height": "50vh",
+		"x": "0px",
+		"y": "0px"
+	})
+	fs.writeFileSync(activeConfPath, JSON.stringify(activeConf))
+	modifyWindow.reload()
 }
 
 /**
