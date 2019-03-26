@@ -1,11 +1,9 @@
 const ipc = require('electron').ipcRenderer
-const path = require('path')
 const Drag = require('../js/Drag')
 const fs = require('fs')
+const electron = require('electron')
 
-let base_path = path.dirname(__dirname).split('/')
-base_path.pop()
-base_path = base_path.join('/')
+let base_path = electron.remote.app.getPath('userData')
 
 const active = require(base_path + '/bds/active.json')
 const bd = require(`${base_path}/bds/${active.active}/${active.active}.json`)
@@ -67,12 +65,18 @@ document.querySelector('#addButton').addEventListener('click', () => {
 
 document.querySelector('#exportBD').addEventListener('click', () => {
 	let selectedValue = getSelectedValue()
+	ipc.once('zip:saved', () => {
+		M.toast({html: "Zip file saved"})
+	})
 	ipc.send('exportBD', {
 		bd: selectedValue
 	})
 })
 
 document.querySelector('#exportBDS').addEventListener('click', () => {
+	ipc.once('zip:saved', () => {
+		M.toast({html: "Zip file saved"})
+	})
 	ipc.send('exportBDS')
 })
 

@@ -1,12 +1,12 @@
 const { app, BrowserWindow, Menu, dialog } = require('electron')
 const ipc = require('electron').ipcMain
-const path = require('path')
 const fs = require('fs')
 const rimraf = require('rimraf')
+const JSZip = require('jszip')
 
 // Windows and other global variables
 let mainWindow, codeWindow, modifyWindow
-const base_path = path.dirname(__dirname)
+const base_path = app.getPath('userData')
 
 // Create menus for each windows
 const nativeMenusTemplate = [
@@ -217,10 +217,14 @@ ipc.on('validate', (e, data) => {
 			fullscreen: true,
 			parent: mainWindow,
 			modal: false,
-			frame: false
+			frame: false,
+			webPreferences: {
+				nodeIntegration: true
+			}
 		})
 		modifyWindow.setMenu(modifyMenu)
 		modifyWindow.loadFile('views/modify.html')
+		modifyWindow.webContents.openDevTools()
 		modifyWindow.on('closed', () => {
 			modifyWindow = null
 		})
@@ -329,16 +333,40 @@ ipc.on('deleteImage', (e, data) => {
 })
 
 ipc.on('exportBD', (e, data) => {
-
-})
-
-ipc.on('exportBDS', () => {
 	let filePath = dialog.showSaveDialog(modifyWindow, {
 		title: 'Exporter tout',
-		nameFieldLabel: "bds.json"
+		defaultPath: app.getPath('documents') + '/'+ data.bd +'.zip'
 	})
-	let configs = []
+	let bdPath = base_path + '/bds/' + data.bd
+	const zip = new JSZip();
+	let files = fs.readdirSync(bdPath, {
+		encoding: 'utf8',
+		withFileTypes: true
+	})
+	if(files) {
+		files.forEach(item => {
+			let f = fs.readFileSync(`${bdPath}/${item.name}`)
+			zip.file(`${data.bd}/${item.name}`, f)
+		})
+		zip
+			.generateNodeStream({
+				type: 'nodebuffer',
+				streamFiles: true
+			})
+			.pipe(fs.createWriteStream(filePath))
+			.on('finish', () => {
+				e.sender.send('zip:saved')
+			})
+	}
+})
+
+ipc.on('exportBDS', (e) => {
+	let filePath = dialog.showSaveDialog(modifyWindow, {
+		title: 'Exporter tout',
+		defaultPath: app.getPath('documents') + '/bds.zip'
+	})
 	let bdsPath = base_path + '/bds'
+	const zip = new JSZip();
 	let files = fs.readdirSync(bdsPath, {
 		encoding: 'utf8',
 		withFileTypes: true
@@ -346,10 +374,30 @@ ipc.on('exportBDS', () => {
 	if(files) {
 		files.forEach(item => {
 			if (item.isDirectory()) {
-				let c = JSON.parse("" + fs.readFileSync(`${base_path}/bds/${item.name}/${item.name}.json`))
-				configs = [...c, ...configs]
+				console.log(`${base_path}/bds/${item.name}`)
+				let children = fs.readdirSync(`${base_path}/bds/${item.name}`, {
+					encoding: 'utf8',
+					withFileTypes: true
+				})
+				if(children)
+				{
+					children.forEach(c => {
+						console.log(c)
+						let contentFile = fs.readFileSync(`${base_path}/bds/${item.name}/${c.name}`)
+						console.log(contentFile)
+						zip.file(`bds/${item.name}/${c.name}`, contentFile)
+					})
+				}
 			}
 		})
+		zip
+			.generateNodeStream({
+				type: 'nodebuffer',
+				streamFiles: true
+			})
+			.pipe(fs.createWriteStream(filePath))
+			.on('finish', () => {
+				e.sender.send('zip:saved')
+			})
 	}
-	fs.writeFileSync(filePath, JSON.stringify(configs))
 })

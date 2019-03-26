@@ -21,10 +21,8 @@
 </head>
 <body class="dragscroll">
 	<script>
-		const path = require('path')
-		let base_path = path.dirname(__dirname).split('/')
-		base_path.pop()
-		base_path = base_path.join('/')
+		const electron = require('electron')
+		let base_path = electron.remote.app.getPath('userData')
 		const active = require(base_path + '/bds/active.json')
 		const bd = require(`${base_path}/bds/${active.active}/${active.active}.json`)
 		let body = document.querySelector('body')
