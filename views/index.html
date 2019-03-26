@@ -24,22 +24,25 @@
 		const electron = require('electron')
 		let base_path = electron.remote.app.getPath('userData')
 		const active = require(base_path + '/bds/active.json')
-		const bd = require(`${base_path}/bds/${active.active}/${active.active}.json`)
-		let body = document.querySelector('body')
-		bd.forEach((image) => {
-			let el = document.createElement("img")
-			el.src = image.url
-			el.style.position = "absolute"
-			el.style.top = image.y + 'px'
-			el.style.left = image.x + 'px'
-			el.style.width = image.width + 'px'
-			el.style.height = image.height + 'px'
-			if(body.offsetWidth < image.x + image.width)
-				body.style.width = image.x + image.width + 20 + "px"
-			if(body.offsetHeight < image.y + image.height)
-				body.style.height = image.y + image.height + 20 + "px"
-			body.appendChild(el)
-		})
+		if(active.active !== null)
+		{
+			const bd = require(`${base_path}/bds/${active.active}/${active.active}.json`)
+			let body = document.querySelector('body')
+			bd.forEach((image) => {
+				let el = document.createElement("img")
+				el.src = image.url
+				el.style.position = "absolute"
+				el.style.top = image.y + 'px'
+				el.style.left = image.x + 'px'
+				el.style.width = image.width + 'px'
+				el.style.height = image.height + 'px'
+				if(body.offsetWidth < image.x + image.width)
+					body.style.width = image.x + image.width + 20 + "px"
+				if(body.offsetHeight < image.y + image.height)
+					body.style.height = image.y + image.height + 20 + "px"
+				body.appendChild(el)
+			})
+		}
 	</script>
 	<script type="text/javascript" src="../js/dragscroll.js"></script>
 </body>

@@ -270,7 +270,7 @@ ipc.on('changeBD', (e, data) => {
 
 // Delete a BD and all files associated to it
 ipc.on('deleteBD', (e, data) => {
-	let bdsPath = fs.realpathSync('./bds')
+	let bdsPath = base_path + '/bds'
 	let dirs = fs.readdirSync(bdsPath, {
 		encoding: 'utf8',
 		withFileTypes: true
@@ -332,6 +332,7 @@ ipc.on('deleteImage', (e, data) => {
 	e.sender.send('configSaved')
 })
 
+// Export zip file which contains a bd
 ipc.on('exportBD', (e, data) => {
 	let filePath = dialog.showSaveDialog(modifyWindow, {
 		title: 'Exporter tout',
@@ -360,6 +361,7 @@ ipc.on('exportBD', (e, data) => {
 	}
 })
 
+// Export zip file which contains all bds
 ipc.on('exportBDS', (e) => {
 	let filePath = dialog.showSaveDialog(modifyWindow, {
 		title: 'Exporter tout',
@@ -374,7 +376,6 @@ ipc.on('exportBDS', (e) => {
 	if(files) {
 		files.forEach(item => {
 			if (item.isDirectory()) {
-				console.log(`${base_path}/bds/${item.name}`)
 				let children = fs.readdirSync(`${base_path}/bds/${item.name}`, {
 					encoding: 'utf8',
 					withFileTypes: true
@@ -385,7 +386,7 @@ ipc.on('exportBDS', (e) => {
 						console.log(c)
 						let contentFile = fs.readFileSync(`${base_path}/bds/${item.name}/${c.name}`)
 						console.log(contentFile)
-						zip.file(`bds/${item.name}/${c.name}`, contentFile)
+						zip.file(`${item.name}/${c.name}`, contentFile)
 					})
 				}
 			}
@@ -399,5 +400,40 @@ ipc.on('exportBDS', (e) => {
 			.on('finish', () => {
 				e.sender.send('zip:saved')
 			})
+	}
+})
+
+// Import zip file
+ipc.on('import', (e) => {
+	let file = dialog.showOpenDialog(modifyWindow, {
+		title: 'Importer des BDs',
+		filters: [
+			{ name: 'Zip', extensions: ['zip']}
+		]
+	})
+	if(file && file[0])
+	{
+		fs.readFile(file[0], function(err, data) {
+		if (!err) {
+			var zip = new JSZip();
+			zip.loadAsync(data).then(function(contents) {
+				Object.keys(contents.files).forEach(function(filename) {
+					if(filename.match(/\.[A-Za-z0-9]{3}/g))
+					{
+						let f = zip.file(filename)
+						f.async("nodebuffer").then((content) => {
+							fs.writeFileSync(base_path + '/bds/' + filename, content)
+						})
+					}
+					else
+					{
+						if(!fs.existsSync(base_path + '/bds/' + filename))
+							fs.mkdirSync(base_path + '/bds/' + filename)
+					}
+				});
+			});
+			modifyWindow.reload()
+		}
+	});
 	}
 })

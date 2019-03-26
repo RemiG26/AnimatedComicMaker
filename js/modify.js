@@ -6,8 +6,9 @@ const electron = require('electron')
 let base_path = electron.remote.app.getPath('userData')
 
 const active = require(base_path + '/bds/active.json')
-const bd = require(`${base_path}/bds/${active.active}/${active.active}.json`)
-
+let bd = null
+if(active.active !== null)
+	bd = require(`${base_path}/bds/${active.active}/${active.active}.json`)
 // Global variables
 let items = []
 let selectionInput = document.querySelector('#selectionInput')
@@ -80,6 +81,10 @@ document.querySelector('#exportBDS').addEventListener('click', () => {
 	ipc.send('exportBDS')
 })
 
+document.querySelector('#import').addEventListener('click', () => {
+	ipc.send('import', )
+})
+
 // ipc listener
 ipc.on('configSaved', () => {
 	M.toast({html: "Configuration sauvée!"})
@@ -98,7 +103,8 @@ ipc.on('openModal', () => {
 // Functions
 function insertImages()
 {
-	bd.forEach((image) => {
+	if(bd !== null)
+		bd.forEach((image) => {
 		let el = document.createElement("img")
 		el.src = image.url
 		el.classList.add('img')
