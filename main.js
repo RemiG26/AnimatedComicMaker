@@ -224,7 +224,6 @@ ipc.on('validate', (e, data) => {
 		})
 		modifyWindow.setMenu(modifyMenu)
 		modifyWindow.loadFile('views/modify.html')
-		modifyWindow.webContents.openDevTools()
 		modifyWindow.on('closed', () => {
 			modifyWindow = null
 		})
@@ -383,9 +382,7 @@ ipc.on('exportBDS', (e) => {
 				if(children)
 				{
 					children.forEach(c => {
-						console.log(c)
 						let contentFile = fs.readFileSync(`${base_path}/bds/${item.name}/${c.name}`)
-						console.log(contentFile)
 						zip.file(`${item.name}/${c.name}`, contentFile)
 					})
 				}
